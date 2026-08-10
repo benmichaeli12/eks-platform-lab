@@ -15,3 +15,9 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "admin_access_principals" {
+  description = "IAM role or user ARNs granted cluster-admin. Add the CI role here."
+  type        = list(string)
+  default     = []
+}
