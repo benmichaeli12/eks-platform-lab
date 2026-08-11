@@ -23,3 +23,6 @@ up:
 down:
 	-terraform -chdir=$(BOOTSTRAP) destroy -auto-approve
 	terraform -chdir=$(PLATFORM) destroy -auto-approve
+
+kubeconfig:
+	aws eks update-kubeconfig --name $$(terraform -chdir=$(PLATFORM) output -raw cluster_name) --region us-east-1

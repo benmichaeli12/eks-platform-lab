@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aws-load-balancer-controller
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://aws.github.io/eks-charts
+    chart: aws-load-balancer-controller
+    targetRevision: 1.13.4
+    helm:
+      releaseName: aws-load-balancer-controller
+      values: |
+        clusterName: CLUSTER_NAME_PLACEHOLDER
+        region: us-east-1
+        vpcId: VPC_ID_PLACEHOLDER
+        serviceAccount:
+          create: true
+          name: aws-load-balancer-controller
+        replicaCount: 1
+        enableServiceMutatorWebhook: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
