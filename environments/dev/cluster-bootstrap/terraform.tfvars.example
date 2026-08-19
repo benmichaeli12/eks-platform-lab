@@ -1,0 +1,2 @@
+state_bucket    = "eks-platform-lab-tfstate-123456789012"
+gitops_repo_url = "https://github.com/benmichaeli12/eks-platform-lab.git"

@@ -38,3 +38,13 @@ output "cluster_security_group_id" {
   description = "Security group for control plane and node communication"
   value       = module.cluster.cluster_security_group_id
 }
+
+output "aws_region" {
+  description = "Region the platform is deployed in"
+  value       = var.aws_region
+}
+
+output "state_bucket" {
+  description = "Bucket holding this root's state, for downstream remote state lookups"
+  value       = "eks-platform-lab-tfstate-${data.aws_caller_identity.current.account_id}"
+}

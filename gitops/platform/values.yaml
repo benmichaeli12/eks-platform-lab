@@ -1,0 +1,13 @@
+# Injected by Terraform through the root Application's Helm parameters.
+clusterName: ""
+vpcId: ""
+awsRegion: us-east-1
+
+# Chart versions for platform components. Pin these deliberately.
+versions:
+  awsLoadBalancerController: 1.13.4
+
+# Toggle components without deleting their manifests.
+enabled:
+  awsLoadBalancerController: true
+  echoServer: true

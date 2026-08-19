@@ -1,3 +1,4 @@
+{{- if .Values.enabled.awsLoadBalancerController }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -13,13 +14,13 @@ spec:
   source:
     repoURL: https://aws.github.io/eks-charts
     chart: aws-load-balancer-controller
-    targetRevision: 1.13.4
+    targetRevision: {{ .Values.versions.awsLoadBalancerController | quote }}
     helm:
       releaseName: aws-load-balancer-controller
       values: |
-        clusterName: CLUSTER_NAME_PLACEHOLDER
-        region: us-east-1
-        vpcId: VPC_ID_PLACEHOLDER
+        clusterName: {{ required "clusterName is required" .Values.clusterName }}
+        region: {{ .Values.awsRegion }}
+        vpcId: {{ required "vpcId is required" .Values.vpcId }}
         serviceAccount:
           create: true
           name: aws-load-balancer-controller
@@ -35,5 +36,5 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=false
       - ServerSideApply=true
+{{- end }}

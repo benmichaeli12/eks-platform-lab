@@ -1,7 +1,7 @@
 PLATFORM  := environments/dev/platform
 BOOTSTRAP := environments/dev/cluster-bootstrap
 
-.PHONY: fmt validate plan up down stop-db kubeconfig
+.PHONY: fmt validate plan up down kubeconfig argocd-password argocd-ui
 
 fmt:
 	terraform fmt -recursive
@@ -9,6 +9,9 @@ fmt:
 validate:
 	terraform -chdir=$(PLATFORM) init -backend=false
 	terraform -chdir=$(PLATFORM) validate
+	terraform -chdir=$(BOOTSTRAP) init -backend=false
+	terraform -chdir=$(BOOTSTRAP) validate
+	helm lint gitops/platform --set clusterName=x --set vpcId=y
 
 plan:
 	terraform -chdir=$(PLATFORM) init
@@ -17,6 +20,7 @@ plan:
 up:
 	terraform -chdir=$(PLATFORM) init
 	terraform -chdir=$(PLATFORM) apply
+	$(MAKE) kubeconfig
 	terraform -chdir=$(BOOTSTRAP) init
 	terraform -chdir=$(BOOTSTRAP) apply
 
@@ -25,4 +29,12 @@ down:
 	terraform -chdir=$(PLATFORM) destroy -auto-approve
 
 kubeconfig:
-	aws eks update-kubeconfig --name $$(terraform -chdir=$(PLATFORM) output -raw cluster_name) --region us-east-1
+	aws eks update-kubeconfig --region us-east-1 \
+		--name $$(terraform -chdir=$(PLATFORM) output -raw cluster_name)
+
+argocd-password:
+	kubectl -n argocd get secret argocd-initial-admin-secret \
+		-o jsonpath='{.data.password}' | base64 -d && echo
+
+argocd-ui:
+	kubectl -n argocd port-forward svc/argocd-server 8080:80
