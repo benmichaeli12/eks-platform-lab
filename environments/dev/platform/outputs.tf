@@ -48,3 +48,38 @@ output "state_bucket" {
   description = "Bucket holding this root's state, for downstream remote state lookups"
   value       = "eks-platform-lab-tfstate-${data.aws_caller_identity.current.account_id}"
 }
+
+output "documents_bucket_name" {
+  description = "S3 bucket holding uploaded documents"
+  value       = module.data.documents_bucket_name
+}
+
+output "jobs_queue_url" {
+  description = "URL of the jobs queue"
+  value       = module.data.jobs_queue_url
+}
+
+output "jobs_queue_name" {
+  description = "Name of the jobs queue, used by KEDA"
+  value       = module.data.jobs_queue_name
+}
+
+output "database_secret_name" {
+  description = "Secrets Manager secret name, referenced by External Secrets"
+  value       = module.data.database_secret_name
+}
+
+output "database_identifier" {
+  description = "RDS identifier, for stop and start"
+  value       = module.data.database_identifier
+}
+
+output "ecr_repository_urls" {
+  description = "ECR repository URIs keyed by service name"
+  value       = module.data.ecr_repository_urls
+}
+
+output "workload_namespace" {
+  description = "Namespace the application workloads run in"
+  value       = var.workload_namespace
+}

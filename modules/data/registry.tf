@@ -1,0 +1,36 @@
+resource "aws_ecr_repository" "services" {
+  for_each = toset(["ingest-api", "metadata-worker"])
+
+  name                 = "${local.name_prefix}/${each.key}"
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = true
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name = "${local.name_prefix}-${each.key}"
+  }
+}
+
+resource "aws_ecr_lifecycle_policy" "services" {
+  for_each = aws_ecr_repository.services
+
+  repository = each.value.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep only the five most recent images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 5
+      }
+      action = {
+        type = "expire"
+      }
+    }]
+  })
+}

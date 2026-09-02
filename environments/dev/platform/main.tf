@@ -21,3 +21,23 @@ module "cluster" {
 
   admin_access_principals = var.admin_access_principals
 }
+
+module "data" {
+  source = "../../../modules/data"
+
+  project_name              = var.project_name
+  environment               = var.environment
+  vpc_id                    = module.network.vpc_id
+  isolated_subnet_ids       = module.network.isolated_subnet_ids
+  cluster_security_group_id = module.cluster.cluster_security_group_id
+}
+
+module "workload_identity" {
+  source = "../../../modules/workload-identity"
+
+  cluster_name         = module.cluster.cluster_name
+  namespace            = var.workload_namespace
+  documents_bucket_arn = module.data.documents_bucket_arn
+  jobs_queue_arn       = module.data.jobs_queue_arn
+  database_secret_arn  = module.data.database_secret_arn
+}

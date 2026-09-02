@@ -1,7 +1,7 @@
 PLATFORM  := environments/dev/platform
 BOOTSTRAP := environments/dev/cluster-bootstrap
 
-.PHONY: fmt validate plan up down kubeconfig argocd-password argocd-ui
+.PHONY: fmt validate plan up down kubeconfig argocd-password argocd-ui stop-db start-db
 
 fmt:
 	terraform fmt -recursive
@@ -38,3 +38,11 @@ argocd-password:
 
 argocd-ui:
 	kubectl -n argocd port-forward svc/argocd-server 8080:80
+
+stop-db:
+	aws rds stop-db-instance --db-instance-identifier \
+		$$(terraform -chdir=$(PLATFORM) output -raw database_identifier)
+
+start-db:
+	aws rds start-db-instance --db-instance-identifier \
+		$$(terraform -chdir=$(PLATFORM) output -raw database_identifier)

@@ -21,3 +21,9 @@ variable "admin_access_principals" {
   type        = list(string)
   default     = []
 }
+
+variable "workload_namespace" {
+  description = "Kubernetes namespace the application workloads run in"
+  type        = string
+  default     = "documents"
+}
