@@ -12,8 +12,18 @@ QUEUE_URL = os.environ["JOBS_QUEUE_URL"]
 MAX_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", 5 * 1024 * 1024))
 
 app = FastAPI(title="ingest-api")
-s3 = boto3.client("s3")
-sqs = boto3.client("sqs")
+
+import functools
+
+REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+
+@functools.cache
+def s3_client():
+    return boto3.client("s3", region_name=REGION)
+
+@functools.cache
+def sqs_client():
+    return boto3.client("sqs", region_name=REGION)
 
 documents_received = Counter(
     "ingest_documents_received_total", "Documents accepted for processing"
