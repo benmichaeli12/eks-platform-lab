@@ -2,12 +2,35 @@
 clusterName: ""
 vpcId: ""
 awsRegion: us-east-1
+workloadNamespace: documents
 
-# Chart versions for platform components. Pin these deliberately.
+# Where Argo CD reads the workload charts from.
+gitopsRepoUrl: ""
+gitopsTargetRevision: main
+
+# Injected from Terraform outputs.
+documentsBucket: ""
+jobsQueueUrl: ""
+jobsQueueName: ""
+databaseSecretName: ""
+
+# Repositories come from Terraform; tags are updated by CI.
+images:
+  ingestApi:
+    repository: ""
+    tag: "bootstrap"
+  metadataWorker:
+    repository: ""
+    tag: "bootstrap"
+
 versions:
   awsLoadBalancerController: 1.13.4
+  externalSecrets: 0.14.3
+  keda: 2.16.1
 
-# Toggle components without deleting their manifests.
 enabled:
   awsLoadBalancerController: true
+  externalSecrets: true
+  keda: true
   echoServer: true
+  workloads: true

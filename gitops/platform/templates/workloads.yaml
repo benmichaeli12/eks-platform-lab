@@ -1,0 +1,79 @@
+{{- if .Values.enabled.workloads }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingest-api
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl | quote }}
+    targetRevision: {{ .Values.gitopsTargetRevision | quote }}
+    path: gitops/charts/ingest-api
+    helm:
+      valuesObject:
+        image:
+          repository: {{ .Values.images.ingestApi.repository | quote }}
+          tag: {{ .Values.images.ingestApi.tag | quote }}
+        env:
+          documentsBucket: {{ .Values.documentsBucket | quote }}
+          jobsQueueUrl: {{ .Values.jobsQueueUrl | quote }}
+          awsRegion: {{ .Values.awsRegion | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.workloadNamespace }}
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metadata-worker
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.gitopsRepoUrl | quote }}
+    targetRevision: {{ .Values.gitopsTargetRevision | quote }}
+    path: gitops/charts/metadata-worker
+    helm:
+      valuesObject:
+        image:
+          repository: {{ .Values.images.metadataWorker.repository | quote }}
+          tag: {{ .Values.images.metadataWorker.tag | quote }}
+        env:
+          documentsBucket: {{ .Values.documentsBucket | quote }}
+          jobsQueueUrl: {{ .Values.jobsQueueUrl | quote }}
+          awsRegion: {{ .Values.awsRegion | quote }}
+        database:
+          secretName: {{ .Values.databaseSecretName | quote }}
+        scaling:
+          queueName: {{ .Values.jobsQueueName | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ .Values.workloadNamespace }}
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+{{- end }}

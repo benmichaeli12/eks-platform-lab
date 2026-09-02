@@ -1,0 +1,5 @@
+apiVersion: v2
+name: ingest-api
+description: Document ingestion API
+type: application
+version: 0.1.0

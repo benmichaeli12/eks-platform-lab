@@ -1,0 +1,18 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: metadata-worker
+spec:
+  scaleTargetRef:
+    name: metadata-worker
+  minReplicaCount: {{ .Values.scaling.minReplicas }}
+  maxReplicaCount: {{ .Values.scaling.maxReplicas }}
+  pollingInterval: {{ .Values.scaling.pollingInterval }}
+  cooldownPeriod: {{ .Values.scaling.cooldownPeriod }}
+  triggers:
+    - type: aws-sqs-queue
+      metadata:
+        queueURL: {{ required "jobsQueueUrl is required" .Values.env.jobsQueueUrl | quote }}
+        queueLength: {{ .Values.scaling.queueLength | quote }}
+        awsRegion: {{ .Values.env.awsRegion | quote }}
+        identityOwner: operator

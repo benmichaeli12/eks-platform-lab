@@ -1,0 +1,16 @@
+image:
+  repository: ""
+  tag: "bootstrap"
+
+replicaCount: 2
+
+env:
+  documentsBucket: ""
+  jobsQueueUrl: ""
+  awsRegion: us-east-1
+
+ingress:
+  enabled: true
+  group: platform
+  order: 10
+  path: /documents
