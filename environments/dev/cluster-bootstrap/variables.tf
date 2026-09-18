@@ -37,3 +37,9 @@ variable "gitops_target_revision" {
   type        = string
   default     = "main"
 }
+
+variable "gitops_repo_username" {
+  description = "GitHub username paired with the token"
+  type        = string
+  default     = "git"
+}
