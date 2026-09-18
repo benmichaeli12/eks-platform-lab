@@ -37,3 +37,13 @@ output "lb_controller_role_arn" {
   description = "Role assumed by the AWS Load Balancer Controller"
   value       = aws_iam_role.lb_controller.arn
 }
+
+output "github_image_push_role_arn" {
+  description = "Role for the application build workflow"
+  value       = aws_iam_role.github_image_push.arn
+}
+
+output "github_terraform_role_arn" {
+  description = "Role for the Terraform workflow"
+  value       = aws_iam_role.github_terraform.arn
+}

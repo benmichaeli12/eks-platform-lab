@@ -1,0 +1,68 @@
+{{- if .Values.enabled.kubePrometheusStack }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: {{ .Values.versions.kubePrometheusStack | quote }}
+    helm:
+      releaseName: kube-prometheus-stack
+      values: |
+        prometheus:
+          prometheusSpec:
+            retention: 24h
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+              limits:
+                memory: 1Gi
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 10Gi
+            serviceMonitorSelectorNilUsesHelmValues: false
+        alertmanager:
+          enabled: false
+        grafana:
+          adminPassword: {{ .Values.grafanaAdminPassword | quote }}
+          persistence:
+            enabled: false
+          ingress:
+            enabled: true
+            ingressClassName: alb
+            annotations:
+              alb.ingress.kubernetes.io/scheme: internet-facing
+              alb.ingress.kubernetes.io/target-type: ip
+              alb.ingress.kubernetes.io/group.name: platform
+              alb.ingress.kubernetes.io/group.order: "20"
+              alb.ingress.kubernetes.io/healthcheck-path: /api/health
+            paths: ["/grafana"]
+            pathType: Prefix
+          grafana.ini:
+            server:
+              root_url: "%(protocol)s://%(domain)s/grafana"
+              serve_from_sub_path: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+{{- end }}

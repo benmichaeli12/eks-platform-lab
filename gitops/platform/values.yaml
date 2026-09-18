@@ -23,10 +23,13 @@ images:
     repository: ""
     tag: "bootstrap"
 
+grafanaAdminPassword: "Password1"
+
 versions:
   awsLoadBalancerController: 1.13.4
   externalSecrets: 0.14.3
   keda: 2.16.1
+  kubePrometheusStack: 68.3.0
 
 enabled:
   awsLoadBalancerController: true
@@ -34,3 +37,4 @@ enabled:
   keda: true
   echoServer: true
   workloads: true
+  kubePrometheusStack: true

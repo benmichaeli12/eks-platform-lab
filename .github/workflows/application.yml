@@ -1,0 +1,112 @@
+name: Build and publish images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'applications/**'
+      - '.github/workflows/application.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: application-build
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    strategy:
+      matrix:
+        service: [ingest-api, metadata-worker]
+
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute the image tag
+        id: meta
+        run: echo "tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.IMAGE_PUSH_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          REPOSITORY: eks-platform-lab-dev/${{ matrix.service }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          docker build -t "$REGISTRY/$REPOSITORY:$TAG" "applications/${{ matrix.service }}"
+          docker push "$REGISTRY/$REPOSITORY:$TAG"
+
+      - name: Verify the image is in ECR
+        run: |
+          aws ecr describe-images \
+            --repository-name "eks-platform-lab-dev/${{ matrix.service }}" \
+            --image-ids imageTag=${{ steps.meta.outputs.tag }} \
+            --query 'imageDetails[0].imageTags' --output text
+
+  publish:
+    name: Update the deployed tag
+    needs: build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bump image tags in the platform values
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          python3 - <<'PY'
+          import os, re, pathlib
+
+          tag = os.environ["TAG"]
+          path = pathlib.Path("gitops/platform/values.yaml")
+          text = path.read_text()
+
+          text = re.sub(
+              r'(ingestApi:\n    repository: .*\n    tag: )"[^"]*"',
+              rf'\g<1>"{tag}"',
+              text,
+          )
+          text = re.sub(
+              r'(metadataWorker:\n    repository: .*\n    tag: )"[^"]*"',
+              rf'\g<1>"{tag}"',
+              text,
+          )
+
+          path.write_text(text)
+          PY
+
+          git diff --stat
+
+      - name: Commit and push
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          if git diff --quiet; then
+            echo "no tag change"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gitops/platform/values.yaml
+          git commit -m "Deploy images ${TAG} [skip ci]"
+          git push

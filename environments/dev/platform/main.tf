@@ -2,6 +2,8 @@ data "aws_caller_identity" "current" {}
 
 locals {
   cluster_name = "${var.project_name}-${var.environment}"
+  ci_role_arn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.cluster_name}-github-terraform"
+
 }
 
 module "network" {
@@ -18,6 +20,9 @@ module "cluster" {
   project_name       = var.project_name
   cluster_name       = local.cluster_name
   private_subnet_ids = module.network.private_subnet_ids
+  github_repository  = var.github_repository
+  aws_region         = var.aws_region
+
 
   admin_access_principals = var.admin_access_principals
 }

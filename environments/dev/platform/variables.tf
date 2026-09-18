@@ -27,3 +27,8 @@ variable "workload_namespace" {
   type        = string
   default     = "documents"
 }
+
+variable "github_repository" {
+  description = "OIDC subject repository. GitHub uses an ID-bearing form: owner@ownerID/repo@repoID"
+  type        = string
+}

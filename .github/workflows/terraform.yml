@@ -1,0 +1,86 @@
+name: Terraform
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'modules/**'
+      - 'environments/**'
+      - '.github/workflows/terraform.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: terraform-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  platform:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: environments/dev/platform
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - run: terraform fmt -check -recursive
+      - run: terraform init -input=false
+      - run: terraform validate
+
+      - name: Plan
+        run: |
+          terraform plan -input=false -no-color -out=tfplan \
+            -var="github_repository=${{ vars.REPO_OIDC_SUBJECT }}"
+          {
+            echo '### Platform plan'
+            echo '```'
+            terraform show -no-color tfplan
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply
+        run: terraform apply -input=false tfplan
+
+  cluster-bootstrap:
+    needs: platform
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: environments/dev/cluster-bootstrap
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - run: terraform init -input=false
+
+      - name: Plan
+        run: |
+          terraform plan -input=false -no-color -out=tfplan \
+            -var="state_bucket=${{ vars.STATE_BUCKET }}" \
+            -var="gitops_repo_url=https://github.com/${{ github.repository }}.git"
+
+      - name: Apply
+        run: terraform apply -input=false tfplan

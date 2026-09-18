@@ -72,3 +72,19 @@ variable "admin_access_principals" {
   type        = list(string)
   default     = []
 }
+
+variable "aws_region" {
+  description = "AWS region, used to construct ARNs"
+  type        = string
+}
+
+variable "github_repository" {
+  description = "OIDC subject repository in GitHub's ID-bearing form: owner@ownerID/repo@repoID"
+  type        = string
+}
+
+variable "github_branch" {
+  description = "Branch allowed to assume the CI roles"
+  type        = string
+  default     = "main"
+}
