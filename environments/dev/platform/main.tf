@@ -23,6 +23,8 @@ module "cluster" {
   github_repository  = var.github_repository
   aws_region         = var.aws_region
 
+  node_instance_types = ["m7i-flex.large", "c7i-flex.large"]
+  node_capacity_type  = "ON_DEMAND"
 
   admin_access_principals = var.admin_access_principals
 }
